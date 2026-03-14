@@ -1,11 +1,33 @@
 // Получение настроек из storage
 async function getSettings() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0 }, (items) => {
+    chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: true }, (items) => {
       resolve(items);
     });
   });
 }
+
+// Функция для вывода отладочных сообщений
+let debugMode = true;
+
+function debugLog(...args) {
+  if (debugMode) {
+    console.log(...args);
+  }
+}
+
+// Обновление режима отладки
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'updateDebugMode') {
+    debugMode = request.debugMode;
+    debugLog('[SBIS Barcode] Режим отладки:', debugMode ? 'включен' : 'выключен');
+  }
+});
+
+// Инициализация режима отладки
+getSettings().then(settings => {
+  debugMode = settings.debugMode;
+});
 
 // Сохранение последнего номера
 async function saveLastNumber(lastNumber) {
@@ -208,33 +230,33 @@ function insertBarcodeIntoInput(input, barcode) {
 
 // Обработчик клика на кнопку генерации
 async function handleGenerateClick(event) {
-  console.log('[SBIS Barcode] Клик обнаружен:', event.target);
+  debugLog('[SBIS Barcode] Клик обнаружен:', event.target);
   
   const button = event.target.closest('.controls-BaseButton');
-  console.log('[SBIS Barcode] Кнопка найдена:', button);
+  debugLog('[SBIS Barcode] Кнопка найдена:', button);
   
   if (!button) return;
   
   const icon = button.querySelector('.icon-Lightning');
-  console.log('[SBIS Barcode] Иконка молнии найдена:', icon);
+  debugLog('[SBIS Barcode] Иконка молнии найдена:', icon);
   
   if (!icon) return;
   
   try {
     const container = button.closest('.wnc-core-code-value-editor');
-    console.log('[SBIS Barcode] Контейнер найден:', container);
+    debugLog('[SBIS Barcode] Контейнер найден:', container);
     
     if (!container) return;
     
     const dropdown = container.querySelector('.controls-Dropdown__text');
     const dropdownText = dropdown ? dropdown.textContent.trim() : '';
-    console.log('[SBIS Barcode] Тип кода:', dropdownText);
+    debugLog('[SBIS Barcode] Тип кода:', dropdownText);
     
     const isBarcode = dropdownText === 'Штрихкод' || dropdownText.includes('Штрихкод');
-    console.log('[SBIS Barcode] Это штрихкод?', isBarcode);
+    debugLog('[SBIS Barcode] Это штрихкод?', isBarcode);
     
     if (!dropdown || !isBarcode) {
-      console.log('[SBIS Barcode] Пропускаем - не штрихкод');
+      debugLog('[SBIS Barcode] Пропускаем - не штрихкод');
       return;
     }
     
@@ -242,19 +264,19 @@ async function handleGenerateClick(event) {
     event.stopPropagation();
     
     const input = container.querySelector('input.controls-Field.js-controls-Field.controls-InputBase__nativeField');
-    console.log('[SBIS Barcode] Поле ввода найдено:', input);
+    debugLog('[SBIS Barcode] Поле ввода найдено:', input);
     
     if (!input) return;
     
     button.style.opacity = '0.5';
     button.style.pointerEvents = 'none';
     
-    console.log('[SBIS Barcode] Генерация штрихкода...');
+    debugLog('[SBIS Barcode] Генерация штрихкода...');
     const barcode = await generateUniqueBarcode();
-    console.log('[SBIS Barcode] Сгенерирован код:', barcode);
+    debugLog('[SBIS Barcode] Сгенерирован код:', barcode);
     
     insertBarcodeIntoInput(input, barcode);
-    console.log('[SBIS Barcode] Код вставлен в поле');
+    debugLog('[SBIS Barcode] Код вставлен в поле');
     
   } catch (error) {
     console.error('[SBIS Barcode] Ошибка генерации штрихкода:', error);
@@ -270,22 +292,22 @@ async function handleGenerateClick(event) {
 
 // Инициализация расширения
 function init() {
-  console.log('[SBIS Barcode] Расширение инициализировано');
-  console.log('[SBIS Barcode] URL:', window.location.href);
-  console.log('[SBIS Barcode] wsConfig:', typeof window.wsConfig !== 'undefined' ? 'найден' : 'не найден');
+  debugLog('[SBIS Barcode] Расширение инициализировано');
+  debugLog('[SBIS Barcode] URL:', window.location.href);
+  debugLog('[SBIS Barcode] wsConfig:', typeof window.wsConfig !== 'undefined' ? 'найден' : 'не найден');
   
   document.addEventListener('click', handleGenerateClick, true);
-  console.log('[SBIS Barcode] Обработчик клика установлен');
+  debugLog('[SBIS Barcode] Обработчик клика установлен');
 }
 
 // Сразу выводим сообщение о загрузке скрипта
-console.log('[SBIS Barcode] Скрипт content.js загружен!');
-console.log('[SBIS Barcode] document.readyState:', document.readyState);
+debugLog('[SBIS Barcode] Скрипт content.js загружен!');
+debugLog('[SBIS Barcode] document.readyState:', document.readyState);
 
 if (document.readyState === 'loading') {
-  console.log('[SBIS Barcode] Ожидаем DOMContentLoaded...');
+  debugLog('[SBIS Barcode] Ожидаем DOMContentLoaded...');
   document.addEventListener('DOMContentLoaded', init);
 } else {
-  console.log('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
+  debugLog('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
   init();
 }

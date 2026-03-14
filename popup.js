@@ -1,8 +1,9 @@
 // Загрузка настроек
 function loadSettings() {
-  chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0 }, (items) => {
+  chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: true }, (items) => {
     document.getElementById('prefix').value = items.prefix;
     document.getElementById('startNumber').value = items.startNumber;
+    document.getElementById('debugMode').checked = items.debugMode;
   });
 }
 
@@ -10,6 +11,7 @@ function loadSettings() {
 function saveSettings() {
   const prefix = document.getElementById('prefix').value.trim();
   const startNumber = parseInt(document.getElementById('startNumber').value) || 100000;
+  const debugMode = document.getElementById('debugMode').checked;
   
   // Валидация префикса
   if (!/^\d+$/.test(prefix)) {
@@ -28,14 +30,21 @@ function saveSettings() {
     return;
   }
   
-  chrome.storage.sync.set({ prefix, startNumber }, () => {
+  chrome.storage.sync.set({ prefix, startNumber, debugMode }, () => {
     showStatus('✓ Настройки сохранены', 'success');
+    
+    // Уведомляем content script об изменении режима отладки
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'updateDebugMode', debugMode });
+      }
+    });
   });
 }
 
 // Сброс настроек
 function resetSettings() {
-  chrome.storage.sync.set({ prefix: '62', startNumber: 100000, lastNumber: 0 }, () => {
+  chrome.storage.sync.set({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: true }, () => {
     loadSettings();
     showStatus('✓ Настройки сброшены', 'success');
   });
@@ -62,10 +71,24 @@ async function handleCheckUpdates() {
   info.textContent = '';
   
   try {
-    const updateInfo = await checkForUpdates();
+    const currentVersion = chrome.runtime.getManifest().version;
     
-    if (updateInfo.available) {
-      info.textContent = `Доступна новая версия ${updateInfo.remoteVersion} (текущая: ${updateInfo.currentVersion})`;
+    // Получаем manifest.json из GitHub
+    const manifestUrl = 'https://raw.githubusercontent.com/armagedon007/sbis-barcode-generator-chrom-extension/main/manifest.json';
+    const response = await fetch(manifestUrl);
+    
+    if (!response.ok) {
+      throw new Error('Не удалось получить информацию об обновлении');
+    }
+    
+    const remoteManifest = await response.json();
+    const remoteVersion = remoteManifest.version;
+    
+    // Сравниваем версии
+    const isNewer = compareVersions(remoteVersion, currentVersion) > 0;
+    
+    if (isNewer) {
+      info.textContent = `Доступна новая версия ${remoteVersion} (текущая: ${currentVersion})`;
       info.style.color = '#2e7d32';
       
       // Предлагаем загрузить обновление
@@ -73,17 +96,34 @@ async function handleCheckUpdates() {
       button.disabled = false;
       button.onclick = handleDownloadUpdate;
     } else {
-      info.textContent = `У вас установлена последняя версия ${updateInfo.currentVersion}`;
+      info.textContent = `У вас установлена последняя версия ${currentVersion}`;
       info.style.color = '#666';
       button.textContent = 'Проверить обновления';
       button.disabled = false;
     }
   } catch (error) {
-    info.textContent = 'Ошибка проверки обновлений. Проверьте настройки репозитория.';
+    console.error('Ошибка проверки обновлений:', error);
+    info.textContent = 'Ошибка: ' + error.message;
     info.style.color = '#c62828';
     button.textContent = 'Проверить обновления';
     button.disabled = false;
   }
+}
+
+// Сравнение версий (1.0.1 > 1.0.0)
+function compareVersions(v1, v2) {
+  const parts1 = v1.split('.').map(Number);
+  const parts2 = v2.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const part1 = parts1[i] || 0;
+    const part2 = parts2[i] || 0;
+    
+    if (part1 > part2) return 1;
+    if (part1 < part2) return -1;
+  }
+  
+  return 0;
 }
 
 // Загрузка обновления
@@ -95,14 +135,31 @@ async function handleDownloadUpdate() {
   button.textContent = 'Загрузка...';
   
   try {
-    const updates = await downloadUpdates();
-    const result = await applyUpdates(updates);
+    const files = ['manifest.json', 'content.js', 'background.js', 'popup.html', 'popup.js'];
+    const updates = {};
     
-    info.textContent = result.message;
+    for (const file of files) {
+      const fileUrl = `https://raw.githubusercontent.com/armagedon007/sbis-barcode-generator-chrom-extension/main/${file}`;
+      const response = await fetch(fileUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Не удалось загрузить файл: ${file}`);
+      }
+      
+      const content = await response.text();
+      updates[file] = content;
+    }
+    
+    // Сохраняем обновления в storage
+    await chrome.storage.local.set({ pendingUpdates: updates });
+    
+    info.textContent = 'Обновления загружены. Перезагрузите расширение в browser://extensions/';
     info.style.color = '#2e7d32';
     button.textContent = 'Обновление загружено';
+    
   } catch (error) {
-    info.textContent = 'Ошибка загрузки обновления';
+    console.error('Ошибка загрузки обновления:', error);
+    info.textContent = 'Ошибка: ' + error.message;
     info.style.color = '#c62828';
     button.textContent = 'Проверить обновления';
     button.disabled = false;
