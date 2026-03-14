@@ -31,13 +31,29 @@ chrome.storage.sync.get({ debugMode: false }, (items) => {
   debugLog('[SBIS Barcode] Режим отладки:', debugMode ? 'включен' : 'выключен');
   debugLog('[SBIS Barcode] document.readyState:', document.readyState);
   
+  // Ждём загрузки wsConfig
+  const checkWsConfig = () => {
+    if (typeof window.wsConfig !== 'undefined') {
+      debugLog('[SBIS Barcode] wsConfig найден:', window.wsConfig);
+    } else {
+      debugLog('[SBIS Barcode] wsConfig не найден, будем использовать cookies');
+    }
+  };
+  
   // Инициализация после загрузки настроек
   if (document.readyState === 'loading') {
     debugLog('[SBIS Barcode] Ожидаем DOMContentLoaded...');
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+      checkWsConfig();
+      init();
+    });
   } else {
     debugLog('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
-    init();
+    // Даём время на загрузку wsConfig
+    setTimeout(() => {
+      checkWsConfig();
+      init();
+    }, 1000);
   }
 });
 
@@ -88,6 +104,7 @@ async function generateEAN13() {
 
 // Получение конфигурации СБИС
 function getSbisConfig() {
+  // Пробуем получить из window.wsConfig
   if (typeof window.wsConfig !== 'undefined') {
     return {
       appId: window.wsConfig.xSabyAppId || '',
@@ -95,10 +112,18 @@ function getSbisConfig() {
       cfgId: window.wsConfig.xSabyCfgId || ''
     };
   }
+  
+  // Пробуем получить из cookies
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {});
+  
   return {
-    appId: '',
-    appVersion: '',
-    cfgId: ''
+    appId: cookies['x-saby-appid'] || '',
+    appVersion: cookies['x-saby-appversion'] || '',
+    cfgId: cookies['x-saby-cfgid'] || ''
   };
 }
 
@@ -106,6 +131,9 @@ function getSbisConfig() {
 async function checkBarcodeUnique(barcode) {
   try {
     const config = getSbisConfig();
+    
+    debugLog('[SBIS Barcode] Проверка уникальности кода:', barcode);
+    debugLog('[SBIS Barcode] Конфигурация:', config);
     
     const response = await fetch('https://ret.sbis.ru/service/?x_version=26.1227-168.2', {
       method: 'POST',
@@ -199,9 +227,13 @@ async function checkBarcodeUnique(barcode) {
     
     const data = await response.json();
     
+    debugLog('[SBIS Barcode] Ответ API:', data);
+    
     if (data.result && data.result.d) {
       const items = data.result.d;
-      return items.length === 0;
+      const isUnique = items.length === 0;
+      debugLog('[SBIS Barcode] Код уникален?', isUnique);
+      return isUnique;
     }
     
     return true;
@@ -306,7 +338,6 @@ async function handleGenerateClick(event) {
 function init() {
   debugLog('[SBIS Barcode] Расширение инициализировано');
   debugLog('[SBIS Barcode] URL:', window.location.href);
-  debugLog('[SBIS Barcode] wsConfig:', typeof window.wsConfig !== 'undefined' ? 'найден' : 'не найден');
   
   document.addEventListener('click', handleGenerateClick, true);
   debugLog('[SBIS Barcode] Обработчик клика установлен');
