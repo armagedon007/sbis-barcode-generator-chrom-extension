@@ -151,7 +151,13 @@ async function checkBarcodeUnique(barcode) {
     debugLog('[SBIS Barcode] Проверка уникальности кода:', barcode);
     debugLog('[SBIS Barcode] Конфигурация:', config);
     
-    const response = await fetch('https://ret.sbis.ru/service/?x_version=26.1227-168.2', {
+    // Определяем домен из текущего URL
+    const currentDomain = window.location.hostname;
+    const apiUrl = `https://${currentDomain}/service/?x_version=26.1227-168.2`;
+    
+    debugLog('[SBIS Barcode] API URL:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'accept': 'application/json, text/javascript, */*; q=0.01',
