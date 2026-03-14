@@ -208,37 +208,56 @@ function insertBarcodeIntoInput(input, barcode) {
 
 // Обработчик клика на кнопку генерации
 async function handleGenerateClick(event) {
+  console.log('[SBIS Barcode] Клик обнаружен:', event.target);
+  
   const button = event.target.closest('.controls-BaseButton');
+  console.log('[SBIS Barcode] Кнопка найдена:', button);
   
   if (!button) return;
   
   const icon = button.querySelector('.icon-Lightning');
+  console.log('[SBIS Barcode] Иконка молнии найдена:', icon);
+  
   if (!icon) return;
   
   try {
     const container = button.closest('.wnc-core-code-value-editor');
+    console.log('[SBIS Barcode] Контейнер найден:', container);
+    
     if (!container) return;
     
     const dropdown = container.querySelector('.controls-Dropdown__text');
     const dropdownText = dropdown ? dropdown.textContent.trim() : '';
-    const isBarcode = dropdownText === 'Штрихкод' || dropdownText.includes('Штрихкод');
+    console.log('[SBIS Barcode] Тип кода:', dropdownText);
     
-    if (!dropdown || !isBarcode) return;
+    const isBarcode = dropdownText === 'Штрихкод' || dropdownText.includes('Штрихкод');
+    console.log('[SBIS Barcode] Это штрихкод?', isBarcode);
+    
+    if (!dropdown || !isBarcode) {
+      console.log('[SBIS Barcode] Пропускаем - не штрихкод');
+      return;
+    }
     
     event.preventDefault();
     event.stopPropagation();
     
     const input = container.querySelector('input.controls-Field.js-controls-Field.controls-InputBase__nativeField');
+    console.log('[SBIS Barcode] Поле ввода найдено:', input);
+    
     if (!input) return;
     
     button.style.opacity = '0.5';
     button.style.pointerEvents = 'none';
     
+    console.log('[SBIS Barcode] Генерация штрихкода...');
     const barcode = await generateUniqueBarcode();
+    console.log('[SBIS Barcode] Сгенерирован код:', barcode);
+    
     insertBarcodeIntoInput(input, barcode);
+    console.log('[SBIS Barcode] Код вставлен в поле');
     
   } catch (error) {
-    console.error('Ошибка генерации штрихкода:', error);
+    console.error('[SBIS Barcode] Ошибка генерации штрихкода:', error);
     alert('Ошибка генерации штрихкода: ' + error.message);
   } finally {
     const button = event.target.closest('.controls-BaseButton');
@@ -251,7 +270,12 @@ async function handleGenerateClick(event) {
 
 // Инициализация расширения
 function init() {
+  console.log('[SBIS Barcode] Расширение инициализировано');
+  console.log('[SBIS Barcode] URL:', window.location.href);
+  console.log('[SBIS Barcode] wsConfig:', typeof window.wsConfig !== 'undefined' ? 'найден' : 'не найден');
+  
   document.addEventListener('click', handleGenerateClick, true);
+  console.log('[SBIS Barcode] Обработчик клика установлен');
 }
 
 if (document.readyState === 'loading') {
