@@ -1,9 +1,16 @@
 // Загрузка настроек
 function loadSettings() {
-  chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: false }, (items) => {
+  chrome.storage.sync.get({ 
+    prefix: '62', 
+    startNumber: 100000, 
+    lastNumber: 0, 
+    debugMode: false,
+    archivalFilter: 'all'
+  }, (items) => {
     document.getElementById('prefix').value = items.prefix;
     document.getElementById('startNumber').value = items.startNumber;
     document.getElementById('debugMode').checked = items.debugMode;
+    document.getElementById('archivalFilter').value = items.archivalFilter;
   });
 }
 
@@ -12,6 +19,7 @@ function saveSettings() {
   const prefix = document.getElementById('prefix').value.trim();
   const startNumber = parseInt(document.getElementById('startNumber').value) || 100000;
   const debugMode = document.getElementById('debugMode').checked;
+  const archivalFilter = document.getElementById('archivalFilter').value;
   
   // Валидация префикса
   if (!/^\d+$/.test(prefix)) {
@@ -30,7 +38,7 @@ function saveSettings() {
     return;
   }
   
-  chrome.storage.sync.set({ prefix, startNumber, debugMode }, () => {
+  chrome.storage.sync.set({ prefix, startNumber, debugMode, archivalFilter }, () => {
     showStatus('✓ Настройки сохранены', 'success');
     
     // Уведомляем все вкладки СБИС об изменении режима отладки
@@ -48,7 +56,13 @@ function saveSettings() {
 
 // Сброс настроек
 function resetSettings() {
-  chrome.storage.sync.set({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: false }, () => {
+  chrome.storage.sync.set({ 
+    prefix: '62', 
+    startNumber: 100000, 
+    lastNumber: 0, 
+    debugMode: false,
+    archivalFilter: 'all'
+  }, () => {
     loadSettings();
     showStatus('✓ Настройки сброшены', 'success');
   });

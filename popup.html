@@ -203,6 +203,18 @@
     </div>
     
     <div class="setting-group">
+      <label for="archivalFilter">Проверять штрихкод:</label>
+      <select id="archivalFilter" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="all">Все товары</option>
+        <option value="active">Только активные</option>
+        <option value="archived">Только архивные</option>
+      </select>
+      <div class="help-text">
+        Выберите какие товары учитывать при проверке уникальности штрихкода.
+      </div>
+    </div>
+    
+    <div class="setting-group">
       <label>
         <input type="checkbox" id="debugMode" style="width: auto; margin-right: 8px;">
         Режим отладки

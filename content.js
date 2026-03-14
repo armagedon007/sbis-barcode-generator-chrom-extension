@@ -10,7 +10,13 @@ function debugLog(...args) {
 // Получение настроек из storage
 async function getSettings() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: false }, (items) => {
+    chrome.storage.sync.get({ 
+      prefix: '62', 
+      startNumber: 100000, 
+      lastNumber: 0, 
+      debugMode: false,
+      archivalFilter: 'all' // 'active', 'archived', 'all'
+    }, (items) => {
       resolve(items);
     });
   });
@@ -147,15 +153,33 @@ function injectConfigScript() {
 async function checkBarcodeUnique(barcode) {
   try {
     const config = getSbisConfig();
+    const settings = await getSettings();
     
     debugLog('[SBIS Barcode] Проверка уникальности кода:', barcode);
     debugLog('[SBIS Barcode] Конфигурация:', config);
+    debugLog('[SBIS Barcode] Фильтр архивных:', settings.archivalFilter);
+    
+    // Определяем значение фильтра Archival
+    let archivalValue;
+    switch (settings.archivalFilter) {
+      case 'active':
+        archivalValue = null;
+        break;
+      case 'archived':
+        archivalValue = 3;
+        break;
+      case 'all':
+      default:
+        archivalValue = 2;
+        break;
+    }
     
     // Определяем домен из текущего URL
     const currentDomain = window.location.hostname;
     const apiUrl = `https://${currentDomain}/service/?x_version=26.1227-168.2`;
     
     debugLog('[SBIS Barcode] API URL:', apiUrl);
+    debugLog('[SBIS Barcode] Archival значение:', archivalValue);
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -176,7 +200,7 @@ async function checkBarcodeUnique(barcode) {
         params: {
           Фильтр: {
             d: [
-              null, null, true, null, null, null, true,
+              archivalValue, null, true, null, null, null, true,
               { d: ['desktop'], s: [{ t: 'Строка', n: 'Device' }], _type: 'record', f: 1 },
               null, false, null, null, 0, true, false, 1, null, true, null, null,
               ['Catalog'],
