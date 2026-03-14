@@ -1,6 +1,6 @@
 // Загрузка настроек
 function loadSettings() {
-  chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: true }, (items) => {
+  chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: false }, (items) => {
     document.getElementById('prefix').value = items.prefix;
     document.getElementById('startNumber').value = items.startNumber;
     document.getElementById('debugMode').checked = items.debugMode;
@@ -33,18 +33,22 @@ function saveSettings() {
   chrome.storage.sync.set({ prefix, startNumber, debugMode }, () => {
     showStatus('✓ Настройки сохранены', 'success');
     
-    // Уведомляем content script об изменении режима отладки
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'updateDebugMode', debugMode });
-      }
+    // Уведомляем все вкладки СБИС об изменении режима отладки
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        if (tab.url && (tab.url.includes('sbis.ru') || tab.url.includes('saby.ru'))) {
+          chrome.tabs.sendMessage(tab.id, { action: 'updateDebugMode', debugMode }).catch(() => {
+            // Игнорируем ошибки для вкладок где content script не загружен
+          });
+        }
+      });
     });
   });
 }
 
 // Сброс настроек
 function resetSettings() {
-  chrome.storage.sync.set({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: true }, () => {
+  chrome.storage.sync.set({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: false }, () => {
     loadSettings();
     showStatus('✓ Настройки сброшены', 'success');
   });

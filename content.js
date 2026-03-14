@@ -1,19 +1,19 @@
-// Получение настроек из storage
-async function getSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: true }, (items) => {
-      resolve(items);
-    });
-  });
-}
-
 // Функция для вывода отладочных сообщений
-let debugMode = true;
+let debugMode = false;
 
 function debugLog(...args) {
   if (debugMode) {
     console.log(...args);
   }
+}
+
+// Получение настроек из storage
+async function getSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get({ prefix: '62', startNumber: 100000, lastNumber: 0, debugMode: false }, (items) => {
+      resolve(items);
+    });
+  });
 }
 
 // Обновление режима отладки
@@ -24,9 +24,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Инициализация режима отладки
-getSettings().then(settings => {
-  debugMode = settings.debugMode;
+// Инициализация режима отладки (синхронно)
+chrome.storage.sync.get({ debugMode: false }, (items) => {
+  debugMode = items.debugMode;
+  debugLog('[SBIS Barcode] Скрипт content.js загружен!');
+  debugLog('[SBIS Barcode] Режим отладки:', debugMode ? 'включен' : 'выключен');
+  debugLog('[SBIS Barcode] document.readyState:', document.readyState);
+  
+  // Инициализация после загрузки настроек
+  if (document.readyState === 'loading') {
+    debugLog('[SBIS Barcode] Ожидаем DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    debugLog('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
+    init();
+  }
 });
 
 // Сохранение последнего номера
@@ -298,16 +310,4 @@ function init() {
   
   document.addEventListener('click', handleGenerateClick, true);
   debugLog('[SBIS Barcode] Обработчик клика установлен');
-}
-
-// Сразу выводим сообщение о загрузке скрипта
-debugLog('[SBIS Barcode] Скрипт content.js загружен!');
-debugLog('[SBIS Barcode] document.readyState:', document.readyState);
-
-if (document.readyState === 'loading') {
-  debugLog('[SBIS Barcode] Ожидаем DOMContentLoaded...');
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  debugLog('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
-  init();
 }
