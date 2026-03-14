@@ -278,8 +278,14 @@ function init() {
   console.log('[SBIS Barcode] Обработчик клика установлен');
 }
 
+// Сразу выводим сообщение о загрузке скрипта
+console.log('[SBIS Barcode] Скрипт content.js загружен!');
+console.log('[SBIS Barcode] document.readyState:', document.readyState);
+
 if (document.readyState === 'loading') {
+  console.log('[SBIS Barcode] Ожидаем DOMContentLoaded...');
   document.addEventListener('DOMContentLoaded', init);
 } else {
+  console.log('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
   init();
 }
