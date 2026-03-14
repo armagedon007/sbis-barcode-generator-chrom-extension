@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "СБИС Barcode Generator",
-  "version": "1.0.6",
+  "version": "1.0.9",
   "description": "Генератор штрихкодов EAN-13 для СБИС",
   "permissions": [
     "activeTab",
@@ -9,11 +9,13 @@
     "storage"
   ],
   "host_permissions": [
+    "https://*.sbis.ru/*",
     "https://*.saby.ru/*"
   ],
   "content_scripts": [
     {
       "matches": [
+        "https://*.sbis.ru/*",
         "https://*.saby.ru/*"
       ],
       "js": ["content.js"],
@@ -36,5 +38,11 @@
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["https://*.sbis.ru/*", "https://*.saby.ru/*"]
+    }
+  ]
 }

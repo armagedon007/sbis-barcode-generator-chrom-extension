@@ -31,10 +31,13 @@ chrome.storage.sync.get({ debugMode: false }, (items) => {
   debugLog('[SBIS Barcode] Режим отладки:', debugMode ? 'включен' : 'выключен');
   debugLog('[SBIS Barcode] document.readyState:', document.readyState);
   
+  // Инжектим скрипт для получения wsConfig
+  injectConfigScript();
+  
   // Ждём загрузки wsConfig
   const checkWsConfig = () => {
-    if (typeof window.wsConfig !== 'undefined') {
-      debugLog('[SBIS Barcode] wsConfig найден:', window.wsConfig);
+    if (cachedConfig) {
+      debugLog('[SBIS Barcode] wsConfig найден через инъекцию:', cachedConfig);
     } else {
       debugLog('[SBIS Barcode] wsConfig не найден, будем использовать cookies');
     }
@@ -44,8 +47,10 @@ chrome.storage.sync.get({ debugMode: false }, (items) => {
   if (document.readyState === 'loading') {
     debugLog('[SBIS Barcode] Ожидаем DOMContentLoaded...');
     document.addEventListener('DOMContentLoaded', () => {
-      checkWsConfig();
-      init();
+      setTimeout(() => {
+        checkWsConfig();
+        init();
+      }, 1500);
     });
   } else {
     debugLog('[SBIS Barcode] DOM уже загружен, инициализируем сразу');
@@ -53,7 +58,7 @@ chrome.storage.sync.get({ debugMode: false }, (items) => {
     setTimeout(() => {
       checkWsConfig();
       init();
-    }, 1000);
+    }, 1500);
   }
 });
 
@@ -102,15 +107,13 @@ async function generateEAN13() {
   return fullCode;
 }
 
-// Получение конфигурации СБИС
+// Получение конфигурации СБИС из контекста страницы
+let cachedConfig = null;
+
 function getSbisConfig() {
-  // Пробуем получить из window.wsConfig
-  if (typeof window.wsConfig !== 'undefined') {
-    return {
-      appId: window.wsConfig.xSabyAppId || '',
-      appVersion: window.wsConfig.xSabyAppVersion || '',
-      cfgId: window.wsConfig.xSabyCfgId || ''
-    };
+  // Возвращаем кешированную конфигурацию если есть
+  if (cachedConfig) {
+    return cachedConfig;
   }
   
   // Пробуем получить из cookies
@@ -125,6 +128,19 @@ function getSbisConfig() {
     appVersion: cookies['x-saby-appversion'] || '',
     cfgId: cookies['x-saby-cfgid'] || ''
   };
+}
+
+// Инъекция скрипта для получения wsConfig из контекста страницы
+function injectConfigScript() {
+  const script = document.createElement('script');
+  script.src = chrome.runtime.getURL('injected.js');
+  (document.head || document.documentElement).appendChild(script);
+  
+  // Слушаем событие с конфигурацией
+  window.addEventListener('sbis-config-ready', (event) => {
+    cachedConfig = event.detail;
+    debugLog('[SBIS Barcode] wsConfig получен через инъекцию:', cachedConfig);
+  });
 }
 
 // Проверка уникальности кода через API СБИС
