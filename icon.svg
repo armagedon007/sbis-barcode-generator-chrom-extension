@@ -1,0 +1,29 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон -->
+  <rect width="128" height="128" rx="24" fill="#4CAF50"/>
+  
+  <!-- Штрихкод -->
+  <g transform="translate(24, 32)">
+    <!-- Линии штрихкода -->
+    <rect x="0" y="0" width="4" height="48" fill="white"/>
+    <rect x="8" y="0" width="2" height="48" fill="white"/>
+    <rect x="14" y="0" width="6" height="48" fill="white"/>
+    <rect x="24" y="0" width="2" height="48" fill="white"/>
+    <rect x="30" y="0" width="4" height="48" fill="white"/>
+    <rect x="38" y="0" width="2" height="48" fill="white"/>
+    <rect x="44" y="0" width="6" height="48" fill="white"/>
+    <rect x="54" y="0" width="4" height="48" fill="white"/>
+    <rect x="62" y="0" width="2" height="48" fill="white"/>
+    <rect x="68" y="0" width="6" height="48" fill="white"/>
+    <rect x="78" y="0" width="2" height="48" fill="white"/>
+    
+    <!-- Текст под штрихкодом -->
+    <text x="40" y="62" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">EAN-13</text>
+  </g>
+  
+  <!-- Иконка молнии (генерация) -->
+  <g transform="translate(88, 88)">
+    <circle cx="12" cy="12" r="16" fill="#FFC107"/>
+    <path d="M 16 6 L 10 14 L 14 14 L 12 20 L 18 12 L 14 12 Z" fill="white"/>
+  </g>
+</svg>

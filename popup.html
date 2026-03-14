@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>СБИС Barcode Generator</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      margin: 0;
+    }
+    
+    h1 {
+      font-size: 16px;
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .info {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    
+    .status {
+      padding: 10px;
+      background: #e8f5e9;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #2e7d32;
+      margin-bottom: 20px;
+    }
+    
+    .update-section {
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .update-section button {
+      width: 100%;
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    .update-section button:hover {
+      background: #1976D2;
+    }
+    
+    .update-section button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .update-info {
+      font-size: 11px;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .settings-section {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+    
+    .settings-section h2 {
+      font-size: 14px;
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .setting-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 13px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    .help-text {
+      font-size: 11px;
+      color: #666;
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    button {
+      flex: 1;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #45a049;
+    }
+    
+    button.secondary {
+      background: #999;
+    }
+    
+    button.secondary:hover {
+      background: #888;
+    }
+    
+    .save-status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: none;
+    }
+    
+    .save-status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      display: block;
+    }
+    
+    .save-status.error {
+      background: #ffebee;
+      color: #c62828;
+      display: block;
+    }
+    
+    .version {
+      margin-top: 15px;
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>📦 СБИС Barcode Generator</h1>
+  
+  <div class="info">
+    Расширение автоматически генерирует штрихкоды EAN-13 при клике на кнопку с иконкой молнии, если выбран тип <strong>"Штрихкод"</strong>.
+  </div>
+  
+  <div class="status">
+    ✓ Расширение активно
+  </div>
+  
+  <div class="update-section">
+    <div>🔄 Обновления</div>
+    <button id="checkUpdates">Проверить обновления</button>
+    <div id="updateInfo" class="update-info"></div>
+  </div>
+  
+  <div class="settings-section">
+    <h2>⚙️ Настройки</h2>
+    
+    <div class="setting-group">
+      <label for="prefix">Префикс штрихкода:</label>
+      <input type="text" id="prefix" placeholder="62" maxlength="5">
+      <div class="help-text">
+        Префикс для генерации штрихкодов EAN-13 (по умолчанию: 62). Только цифры, не более 5 символов.
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <label for="startNumber">Начальный номер:</label>
+      <input type="number" id="startNumber" placeholder="100000" min="1">
+      <div class="help-text">
+        С какого номера начинать генерацию (по умолчанию: 100000 - 6 знаков).
+      </div>
+    </div>
+    
+    <div class="buttons">
+      <button id="save">Сохранить</button>
+      <button id="reset" class="secondary">Сбросить</button>
+    </div>
+    
+    <div id="save-status" class="save-status"></div>
+  </div>
+  
+  <div class="version">
+    Версия <span id="currentVersion">1.0.0</span>
+  </div>
+  
+  <script src="updater.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
